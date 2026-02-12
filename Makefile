@@ -1,4 +1,4 @@
-CFLAGS=-Wall -fPIC -ansi -pedantic
+CFLAGS=-Wall -Wextra -fPIC -D_GNU_SOURCE
 LIBDIR=/lib
 
 ifeq ($(shell if uname -o | grep -q "GNU/Linux" ; then echo true; else echo false; fi),true)
@@ -13,16 +13,17 @@ ifeq ($(shell if uname -o | grep -q "GNU/Linux" ; then echo true; else echo fals
 endif
 
 PAM_DIR=$(LIBDIR)/security
+OBJECTS=pam_oauth2.o oidc.o jwt_verify.o
+LDLIBS=-ljwt -ljansson -lcurl -lssl -lcrypto
 
 all: pam_oauth2.so
 
-pam_oauth2.so: pam_oauth2.o
-	$(CC) -shared $^ -lcurl -o $@
+pam_oauth2.so: $(OBJECTS)
+	$(CC) -shared $^ $(LDLIBS) -o $@
 
 install: pam_oauth2.so
 	install -d $(DESTDIR)$(PAM_DIR)
 	install -m 644 $< $(DESTDIR)$(PAM_DIR)
 
 clean:
-	$(MAKE) -C jsmn clean
 	rm -f *.o *.so
